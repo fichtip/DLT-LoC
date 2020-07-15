@@ -158,7 +158,11 @@ contract TradeFinanceContract {
             orders[_orderId].state < States.DELIVERED,
             "Order got already delivered."
         );
-
+        require(
+            orders[_orderId].freightSigned == false,
+            "Refund not possible as the freight company already signed the arrival."
+        );
+		
         orders[_orderId].state = States.CANCELLED;
         balances[orders[_orderId].buyer] -= orders[_orderId].price;
         orders[_orderId].buyer.transfer(orders[_orderId].price);
