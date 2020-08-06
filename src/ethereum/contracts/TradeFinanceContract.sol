@@ -180,7 +180,7 @@ contract TradeFinanceContract {
         transitionNextState(_orderId)
     {
         require(
-            orders[_orderId].price <= msg.value,
+            orders[_orderId].price == msg.value,
             "Not enough Ether sent to cover the price of the order."
         );
         balances[orders[_orderId].buyer] += orders[_orderId].price;
