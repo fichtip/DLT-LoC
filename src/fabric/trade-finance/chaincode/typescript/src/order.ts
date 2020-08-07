@@ -7,8 +7,8 @@ export enum State {
     CONFIRMED,
     SHIPPED,
     DELIVERED,
-    CLOSED,
-    CANCELLED
+    CANCELLED,
+    PASSED
 }
 
 export class Order {
@@ -19,7 +19,7 @@ export class Order {
     public quantity: number;
     public price: number;
     public shippingAddress: string;
-    public latestDeliveryDate: string;
+    public latestDeliveryDate: Date;
     public shippingCosts: number;
     public trackingCode: string;
     public buyerSigned: boolean;

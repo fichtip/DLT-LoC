@@ -8,7 +8,8 @@ contract TradeFinanceContract {
         SHIPPED,
         DELIVERED,
         CLOSED,
-        CANCELLED
+        CANCELLED,
+        PASSED
     }
 
     address payable internal seller;
@@ -163,7 +164,7 @@ contract TradeFinanceContract {
             "Refund not possible as the freight company already signed the arrival."
         );
 		
-        orders[_orderId].state = States.CANCELLED;
+        orders[_orderId].state = States.PASSED;
         balances[orders[_orderId].buyer] -= orders[_orderId].price;
         orders[_orderId].buyer.transfer(orders[_orderId].price);
         emit Log(

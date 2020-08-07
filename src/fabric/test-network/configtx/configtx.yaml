@@ -44,15 +44,15 @@ Organizations:
         OrdererEndpoints:
             - orderer.example.com:7050
 
-    - &Org1
+    - &Seller
         # DefaultOrg defines the organization which is used in the sampleconfig
         # of the fabric.git development environment
-        Name: Org1MSP
+        Name: SellerMSP
 
         # ID to load the MSP definition as
-        ID: Org1MSP
+        ID: SellerMSP
 
-        MSPDir: ../organizations/peerOrganizations/org1.example.com/msp
+        MSPDir: ../organizations/peerOrganizations/seller.example.com/msp
 
         # Policies defines the set of policies at this level of the config tree
         # For organization policies, their canonical path is usually
@@ -60,34 +60,34 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('Org1MSP.admin', 'Org1MSP.peer', 'Org1MSP.client')"
+                Rule: "OR('SellerMSP.admin', 'SellerMSP.peer', 'SellerMSP.client')"
             Writers:
                 Type: Signature
-                Rule: "OR('Org1MSP.admin', 'Org1MSP.client')"
+                Rule: "OR('SellerMSP.admin', 'SellerMSP.client')"
             Admins:
                 Type: Signature
-                Rule: "OR('Org1MSP.admin')"
+                Rule: "OR('SellerMSP.admin')"
             Endorsement:
                 Type: Signature
-                Rule: "OR('Org1MSP.peer')"
+                Rule: "OR('SellerMSP.peer')"
 
         # leave this flag set to true.
         AnchorPeers:
             # AnchorPeers defines the location of peers which can be used
             # for cross org gossip communication.  Note, this value is only
             # encoded in the genesis block in the Application section context
-            - Host: peer0.org1.example.com
+            - Host: peer0.seller.example.com
               Port: 7051
 
-    - &Org2
+    - &Buyer
         # DefaultOrg defines the organization which is used in the sampleconfig
         # of the fabric.git development environment
-        Name: Org2MSP
+        Name: BuyerMSP
 
         # ID to load the MSP definition as
-        ID: Org2MSP
+        ID: BuyerMSP
 
-        MSPDir: ../organizations/peerOrganizations/org2.example.com/msp
+        MSPDir: ../organizations/peerOrganizations/buyer.example.com/msp
 
         # Policies defines the set of policies at this level of the config tree
         # For organization policies, their canonical path is usually
@@ -95,23 +95,57 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('Org2MSP.admin', 'Org2MSP.peer', 'Org2MSP.client')"
+                Rule: "OR('BuyerMSP.admin', 'BuyerMSP.peer', 'BuyerMSP.client')"
             Writers:
                 Type: Signature
-                Rule: "OR('Org2MSP.admin', 'Org2MSP.client')"
+                Rule: "OR('BuyerMSP.admin', 'BuyerMSP.client')"
             Admins:
                 Type: Signature
-                Rule: "OR('Org2MSP.admin')"
+                Rule: "OR('BuyerMSP.admin')"
             Endorsement:
                 Type: Signature
-                Rule: "OR('Org2MSP.peer')"
+                Rule: "OR('BuyerMSP.peer')"
 
         AnchorPeers:
             # AnchorPeers defines the location of peers which can be used
             # for cross org gossip communication.  Note, this value is only
             # encoded in the genesis block in the Application section context
-            - Host: peer0.org2.example.com
+            - Host: peer0.buyer.example.com
               Port: 9051
+
+    - &Freight
+        # DefaultOrg defines the organization which is used in the sampleconfig
+        # of the fabric.git development environment
+        Name: FreightMSP
+
+        # ID to load the MSP definition as
+        ID: FreightMSP
+
+        MSPDir: ../organizations/peerOrganizations/freight.example.com/msp
+
+        # Policies defines the set of policies at this level of the config tree
+        # For organization policies, their canonical path is usually
+        #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('FreightMSP.admin', 'FreightMSP.peer', 'FreightMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('FreightMSP.admin', 'FreightMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('FreightMSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('FreightMSP.peer')"
+
+        AnchorPeers:
+            # AnchorPeers defines the location of peers which can be used
+            # for cross org gossip communication.  Note, this value is only
+            # encoded in the genesis block in the Application section context
+            - Host: peer0.buyer.example.com
+              Port: 11051
 
 ################################################################################
 #
@@ -308,7 +342,7 @@ Channel: &ChannelDefaults
 ################################################################################
 Profiles:
 
-    TwoOrgsOrdererGenesis:
+    ThreeOrgsOrdererGenesis:
         <<: *ChannelDefaults
         Orderer:
             <<: *OrdererDefaults
@@ -319,15 +353,17 @@ Profiles:
         Consortiums:
             SampleConsortium:
                 Organizations:
-                    - *Org1
-                    - *Org2
-    TwoOrgsChannel:
+                    - *Seller
+                    - *Buyer
+                    - *Freight
+    ThreeOrgsChannel:
         Consortium: SampleConsortium
         <<: *ChannelDefaults
         Application:
             <<: *ApplicationDefaults
             Organizations:
-                - *Org1
-                - *Org2
+                - *Seller
+                - *Buyer
+                - *Freight
             Capabilities:
                 <<: *ApplicationCapabilities

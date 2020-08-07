@@ -202,11 +202,11 @@ function createOrgs() {
     echo
 
     echo "##########################################################"
-    echo "############ Create Org1 Identities ######################"
+    echo "############ Create Seller Identities ######################"
     echo "##########################################################"
 
     set -x
-    cryptogen generate --config=./organizations/cryptogen/crypto-config-org1.yaml --output="organizations"
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-seller.yaml --output="organizations"
     res=$?
     set +x
     if [ $res -ne 0 ]; then
@@ -215,11 +215,25 @@ function createOrgs() {
     fi
 
     echo "##########################################################"
-    echo "############ Create Org2 Identities ######################"
+    echo "############ Create Buyer Identities ######################"
     echo "##########################################################"
 
     set -x
-    cryptogen generate --config=./organizations/cryptogen/crypto-config-org2.yaml --output="organizations"
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-buyer.yaml --output="organizations"
+    res=$?
+    set +x
+    if [ $res -ne 0 ]; then
+      echo $'\e[1;32m'"Failed to generate certificates..."$'\e[0m'
+      exit 1
+    fi
+
+
+    echo "##########################################################"
+    echo "############ Create Freight Company Identities ###########"
+    echo "##########################################################"
+
+    set -x
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-freight.yaml --output="organizations"
     res=$?
     set +x
     if [ $res -ne 0 ]; then
@@ -257,16 +271,22 @@ function createOrgs() {
     sleep 10
 
     echo "##########################################################"
-    echo "############ Create Org1 Identities ######################"
+    echo "############ Create Seller Identities ####################"
     echo "##########################################################"
 
-    createOrg1
+    createSeller
 
     echo "##########################################################"
-    echo "############ Create Org2 Identities ######################"
+    echo "############ Create Buyer Identities #####################"
     echo "##########################################################"
 
-    createOrg2
+    createBuyer
+
+    echo "##########################################################"
+    echo "############ Create Freight company Identities ###########"
+    echo "##########################################################"
+
+    createFreight
 
     echo "##########################################################"
     echo "############ Create Orderer Org Identities ###############"
@@ -277,7 +297,7 @@ function createOrgs() {
   fi
 
   echo
-  echo "Generate CCP files for Org1 and Org2"
+  echo "Generate CCP files for Seller and Buyer"
   ./organizations/ccp-generate.sh
 }
 
@@ -321,7 +341,7 @@ function createConsortium() {
   # Note: For some unknown reason (at least for now) the block file can't be
   # named orderer.genesis.block or the orderer will fail to launch!
   set -x
-  configtxgen -profile TwoOrgsOrdererGenesis -channelID system-channel -outputBlock ./system-genesis-block/genesis.block
+  configtxgen -profile ThreeOrgsOrdererGenesis -channelID system-channel -outputBlock ./system-genesis-block/genesis.block
   res=$?
   set +x
   if [ $res -ne 0 ]; then
@@ -361,7 +381,7 @@ function networkUp() {
   fi
 }
 
-## call the script to join create the channel and join the peers of org1 and org2
+## call the script to join create the channel and join the peers of seller and buyer
 function createChannel() {
 
 ## Bring up the network if it is not arleady up.
@@ -399,7 +419,7 @@ function deployCC() {
 
 # Tear down running network
 function networkDown() {
-  # stop org3 containers also in addition to org1 and org2, in case we were running sample to add org3
+  # stop org3 containers also in addition to seller and buyer, in case we were running sample to add org3
   docker-compose -f $COMPOSE_FILE_BASE -f $COMPOSE_FILE_COUCH -f $COMPOSE_FILE_CA down --volumes --remove-orphans
   docker-compose -f $COMPOSE_FILE_COUCH_ORG3 -f $COMPOSE_FILE_ORG3 down --volumes --remove-orphans
   # Don't remove the generated artifacts -- note, the ledgers are always removed
@@ -412,11 +432,14 @@ function networkDown() {
     # remove orderer block and other channel configuration transactions and certs
     rm -rf system-genesis-block/*.block organizations/peerOrganizations organizations/ordererOrganizations
     ## remove fabric ca artifacts
-    rm -rf organizations/fabric-ca/org1/msp organizations/fabric-ca/org1/tls-cert.pem organizations/fabric-ca/org1/ca-cert.pem organizations/fabric-ca/org1/IssuerPublicKey organizations/fabric-ca/org1/IssuerRevocationPublicKey organizations/fabric-ca/org1/fabric-ca-server.db
-    rm -rf organizations/fabric-ca/org2/msp organizations/fabric-ca/org2/tls-cert.pem organizations/fabric-ca/org2/ca-cert.pem organizations/fabric-ca/org2/IssuerPublicKey organizations/fabric-ca/org2/IssuerRevocationPublicKey organizations/fabric-ca/org2/fabric-ca-server.db
+    rm -rf organizations/fabric-ca/seller/msp organizations/fabric-ca/seller/tls-cert.pem organizations/fabric-ca/seller/ca-cert.pem organizations/fabric-ca/seller/IssuerPublicKey organizations/fabric-ca/seller/IssuerRevocationPublicKey organizations/fabric-ca/seller/fabric-ca-server.db
+    rm -rf organizations/fabric-ca/buyer/msp organizations/fabric-ca/buyer/tls-cert.pem organizations/fabric-ca/buyer/ca-cert.pem organizations/fabric-ca/buyer/IssuerPublicKey organizations/fabric-ca/buyer/IssuerRevocationPublicKey organizations/fabric-ca/buyer/fabric-ca-server.db
+    rm -rf organizations/fabric-ca/freight/msp organizations/fabric-ca/freight/tls-cert.pem organizations/fabric-ca/freight/ca-cert.pem organizations/fabric-ca/freight/IssuerPublicKey organizations/fabric-ca/freight/IssuerRevocationPublicKey organizations/fabric-ca/freight/fabric-ca-server.db
     rm -rf organizations/fabric-ca/ordererOrg/msp organizations/fabric-ca/ordererOrg/tls-cert.pem organizations/fabric-ca/ordererOrg/ca-cert.pem organizations/fabric-ca/ordererOrg/IssuerPublicKey organizations/fabric-ca/ordererOrg/IssuerRevocationPublicKey organizations/fabric-ca/ordererOrg/fabric-ca-server.db
     rm -rf addOrg3/fabric-ca/org3/msp addOrg3/fabric-ca/org3/tls-cert.pem addOrg3/fabric-ca/org3/ca-cert.pem addOrg3/fabric-ca/org3/IssuerPublicKey addOrg3/fabric-ca/org3/IssuerRevocationPublicKey addOrg3/fabric-ca/org3/fabric-ca-server.db
 
+    # DELETE THE OLD DOCKER VOLUMES
+    docker volume prune -f
 
     # remove channel and script artifacts
     rm -rf channel-artifacts log.txt fabcar.tar.gz fabcar
