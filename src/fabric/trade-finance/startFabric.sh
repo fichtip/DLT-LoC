@@ -28,15 +28,15 @@ else
 fi
 
 # clean out any old identites in the wallets
-rm -rf javascript/wallet/*
-rm -rf java/wallet/*
-rm -rf typescript/wallet/*
-rm -rf go/wallet/*
+rm -rf application/javascript/wallet/*
+rm -rf application/java/wallet/*
+rm -rf application/typescript/wallet/*
+rm -rf application/go/wallet/*
 
 # launch network; create channel, add third org and join peer to channel
 pushd ../test-network
 ./network.sh down
-./network.sh up createChannel
+./network.sh up createChannel -ca
 ./network.sh deployCC -ccn trade-finance -ccv 1 -ccl ${CC_SRC_LANGUAGE} -ccp ${CC_SRC_PATH}
 popd
 
@@ -45,84 +45,34 @@ cat <<EOF
 Total setup execution time : $(($(date +%s) - starttime)) secs ...
 
 Next, use the trade-finance applications to interact with the deployed trade-finance contract.
-The trade-finance applications are available in multiple programming languages.
-Follow the instructions for the programming language of your choice:
-
-JavaScript:
-
-  Start by changing into the "javascript" directory:
-    cd javascript
-
-  Next, install all required packages:
-    npm install
-
-  Then run the following applications to enroll the admin user, and register a new user
-  called appUser which will be used by the other applications to interact with the deployed
-  trade-finance contract:
-    node enrollAdmin
-    node registerUser
-
-  You can run the invoke application as follows. By default, the invoke application will
-  create a new car, but you can update the application to submit other transactions:
-    node invoke
-
-  You can run the query application as follows. By default, the query application will
-  return all cars, but you can update the application to evaluate other transactions:
-    node query
-
-TypeScript:
-
-  Start by changing into the "typescript" directory:
-    cd typescript
-
-  Next, install all required packages:
-    npm install
-
-  Next, compile the TypeScript code into JavaScript:
-    npm run build
-
-  Then run the following applications to enroll the admin user, and register a new user
-  called appUser which will be used by the other applications to interact with the deployed
-  trade-finance contract:
-    node dist/enrollAdmin
-    node dist/registerUser
-
-  You can run the invoke application as follows. By default, the invoke application will
-  create a new car, but you can update the application to submit other transactions:
-    node dist/invoke
-
-  You can run the query application as follows. By default, the query application will
-  return all cars, but you can update the application to evaluate other transactions:
-    node dist/query
+The trade-finance applications are available in the java directory of the specific company.
 
 Java:
 
   Start by changing into the "java" directory:
-    cd java
+    cd application/{seller|buyer|freight}/java
 
   Then, install dependencies and run the test using:
     mvn test
 
-  The test will invoke the sample client app which perform the following:
-    - Enroll admin and appUser and import them into the wallet (if they don't already exist there)
-    - Submit a transaction to create a new car
-    - Evaluate a transaction (query) to return details of this car
-    - Submit a transaction to change the owner of this car
-    - Evaluate a transaction (query) to return the updated details of this car
+  The seller test will invoke the sample client app and perform the following:
+    - Enroll User1.seller and import it into the wallet (if it does not already exist there)
+    - Query all orders
+		- Add a three new orders
+		- Output the added order
+		- Ship the order with id 2 if it got already confirmed
 
-Go:
+	The buyer test will invoke the sample client app and perform the following:
+		- Enroll User1.buyer and import it into the wallet (if it does not already exist there)
+		- Query all orders
+		- Cancel the order with id 1
+		- Confirm the order with id 2
+		- Check if the delivery date of the order with 3 passed
+		- Sign the arrival of the order with id 2
 
-  Start by changing into the "go" directory:
-    cd go
-
-  Then, install dependencies and run the test using:
-    go run trade-finance.go
-
-  The test will invoke the sample client app which perform the following:
-    - Import user credentials into the wallet (if they don't already exist there)
-    - Submit a transaction to create a new car
-    - Evaluate a transaction (query) to return details of this car
-    - Submit a transaction to change the owner of this car
-    - Evaluate a transaction (query) to return the updated details of this car
+	The freight test will invoke the sample client app and perform the following:
+		- Enroll User1.freight and import it into the wallet (if it does not already exist there)
+		- Query all orders
+		- Sign the arrival of the order with id 2
 
 EOF

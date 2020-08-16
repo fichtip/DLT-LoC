@@ -7,10 +7,31 @@ import { Order, State } from "./order";
 
 export class TradeFinance extends Contract {
 
+    private restrictedCall(ctx: Context, allowedAffiliation: string) {
+        if (!ctx.clientIdentity.assertAttributeValue("hf.Affiliation", allowedAffiliation)) {
+            throw new Error("Only users with affiliation " + allowedAffiliation + " are allowed to call this function");
+        }
+    }
+
+    private restrictedCall2(ctx: Context, allowedAffiliation1: string, allowedAffiliation2: string) {
+        if (!ctx.clientIdentity.assertAttributeValue("hf.Affiliation", allowedAffiliation1) && !ctx.clientIdentity.assertAttributeValue("hf.Affiliation", allowedAffiliation2)) {
+            throw new Error("Only users with affiliation " + allowedAffiliation1 + " or " + allowedAffiliation2 + " are allowed to call this function.");
+        }
+    }
+
+    private async getOrder(ctx: Context, _orderId: string): Promise<Order> {
+        const orderAsBytes = await ctx.stub.getState(_orderId);
+        if (orderAsBytes.length === 0) {
+            throw new Error("An order with ID " + _orderId + " does not exist");
+        }
+        const order: Order = JSON.parse(orderAsBytes.toString());
+        return order;
+    }
+
     public async queryOrder(ctx: Context, _orderId: string): Promise<string> {
         const orderAsBytes = await ctx.stub.getState(_orderId);
-        if (!orderAsBytes || orderAsBytes.length === 0) {
-            throw new Error("${_orderId} does not exist");
+        if (orderAsBytes.length === 0) {
+            throw new Error("" + _orderId + " does not exist");
         }
         console.log(orderAsBytes.toString());
         return orderAsBytes.toString();
@@ -40,15 +61,21 @@ export class TradeFinance extends Contract {
         _productId: number,
         _quantity: number,
         _price: number,
+        _shippingCosts: number,
         _shippingAddress: string,
-        _latestDeliveryDate: string,
-        _shippingCosts: number) {
+        _latestDeliveryDate: string) {
         console.info("============= START : Create Order ===========");
 
+        this.restrictedCall(ctx, "seller");
         const orderAsBytes = await ctx.stub.getState(_orderId);
-        if (orderAsBytes || orderAsBytes.length > 0) {
-            throw new Error("An order with ID ${_orderId} does already exist");
+        if (orderAsBytes.length > 0) {
+            throw new Error("An order with ID " + _orderId + " does already exist");
         }
+
+        _productId = Number(_productId);
+        _quantity = Number(_quantity);
+        _price = Number(_price);
+        _shippingCosts = Number(_shippingCosts);
 
         if (_price < _shippingCosts) {
             throw new Error("The price must be greater or equal to the shipping costs.");
@@ -64,9 +91,9 @@ export class TradeFinance extends Contract {
             productId: _productId,
             quantity: _quantity,
             price: _price,
+            shippingCosts: _shippingCosts,
             shippingAddress: _shippingAddress,
             latestDeliveryDate: parsedDate,
-            shippingCosts: _shippingCosts,
             trackingCode: undefined,
             buyerSigned: undefined,
             freightSigned: undefined
@@ -79,33 +106,27 @@ export class TradeFinance extends Contract {
     public async cancelOrder(ctx: Context, _orderId: string) {
         console.info("============= START : cancelOrder ===========");
 
-        const orderAsBytes = await ctx.stub.getState(_orderId);
-        if (!orderAsBytes || orderAsBytes.length === 0) {
-            throw new Error("An order with ID ${_orderId} does already exist");
-        }
-        const order: Order = JSON.parse(orderAsBytes.toString());
+        this.restrictedCall2(ctx, "seller", "buyer");
+        const order = await this.getOrder(ctx, _orderId);
 
         if (order.state == State.DELIVERED || order.state == State.SHIPPED || order.state == State.CANCELLED || order.state == State.PASSED) {
-            throw new Error("The state of order ${_orderId} does not allow this action");
+            throw new Error("The state of order " + _orderId + "  does not allow this action");
         }
 
         order.state = State.CANCELLED;
 
         await ctx.stub.putState(_orderId, Buffer.from(JSON.stringify(order)));
+        console.info("Order " + _orderId + " has been cancelled.");
         console.info("============= END : cancelOrder ===========");
     }
 
     public async deliveryDatePassed(ctx: Context, _orderId: string) {
         console.info("============= START : deliveryDatePassed ===========");
 
-        const orderAsBytes = await ctx.stub.getState(_orderId);
-        if (!orderAsBytes || orderAsBytes.length === 0) {
-            throw new Error("An order with ID ${_orderId} does already exist");
-        }
-        const order: Order = JSON.parse(orderAsBytes.toString());
+        const order = await this.getOrder(ctx, _orderId);
 
         if (order.state >= State.DELIVERED) {
-            throw new Error("The state of order ${_orderId} does not allow this action");
+            throw new Error("The state of order " + _orderId + "  does not allow this action");
         }
 
         var currentDate = new Date();
@@ -116,89 +137,72 @@ export class TradeFinance extends Contract {
         }
 
         await ctx.stub.putState(_orderId, Buffer.from(JSON.stringify(order)));
+        console.info("Order " + _orderId + " has been cancelled due passed delivery date.");
         console.info("============= END : deliveryDatePassed ===========");
     }
 
     public async confirmOrder(ctx: Context, _orderId: string) {
         console.info("============= START : confirmOrder ===========");
 
-        const orderAsBytes = await ctx.stub.getState(_orderId);
-        if (!orderAsBytes || orderAsBytes.length === 0) {
-            throw new Error("An order with ID ${_orderId} does already exist");
-        }
-        const order: Order = JSON.parse(orderAsBytes.toString());
+        this.restrictedCall(ctx, "buyer");
+        const order = await this.getOrder(ctx, _orderId);
 
         if (order.state != State.CREATED) {
-            throw new Error("The state of order ${_orderId} does not allow this action");
+            throw new Error("The state of order " + _orderId + "  does not allow this action");
         }
 
         order.state = State.CONFIRMED;
 
         await ctx.stub.putState(_orderId, Buffer.from(JSON.stringify(order)));
+        console.info("Order " + _orderId + " has been confirmed.");
         console.info("============= END : confirmOrder ===========");
     }
 
     public async shipOrder(ctx: Context, _orderId: string, _trackingCode: string) {
         console.info("============= START : shipOrder ===========");
 
-        const orderAsBytes = await ctx.stub.getState(_orderId);
-        if (!orderAsBytes || orderAsBytes.length === 0) {
-            throw new Error("An order with ID ${_orderId} does already exist");
-        }
-        const order: Order = JSON.parse(orderAsBytes.toString());
+        this.restrictedCall(ctx, "seller");
+        const order = await this.getOrder(ctx, _orderId);
 
         if (order.state != State.CONFIRMED) {
-            throw new Error("The state of order ${_orderId} does not allow this action");
+            throw new Error("The state of order " + _orderId + " does not allow this action");
         }
 
         order.state = State.CONFIRMED;
         order.trackingCode = _trackingCode;
 
         await ctx.stub.putState(_orderId, Buffer.from(JSON.stringify(order)));
+        console.info("Order " + _orderId + " has been shipped.");
         console.info("============= END : shipOrder ===========");
     }
 
-    public async signArrivalBuyer(ctx: Context, _orderId: string) {
-        console.info("============= START : signArrivalBuyer ===========");
+    public async signArrival(ctx: Context, _orderId: string) {
+        console.info("============= START : signArrival ===========");
 
-        const orderAsBytes = await ctx.stub.getState(_orderId);
-        if (!orderAsBytes || orderAsBytes.length === 0) {
-            throw new Error("An order with ID ${_orderId} does already exist");
-        }
-        const order: Order = JSON.parse(orderAsBytes.toString());
+        this.restrictedCall2(ctx, "freight", "buyer");
+        const order = await this.getOrder(ctx, _orderId);
 
         if (order.state != State.SHIPPED) {
-            throw new Error("The state of order ${_orderId} does not allow this action");
+            throw new Error("The state of order " + _orderId + " does not allow this action");
         }
 
-        order.buyerSigned = true;
+        const mspId: string = ctx.clientIdentity.getMSPID();
+        if (mspId == "buyer") {
+            order.buyerSigned = true;
+            console.info("Order " + _orderId + " arrival has been signed by the buyer.");
+        }
+
+        if (mspId == "freight") {
+            order.freightSigned = true;
+            console.info("Order " + _orderId + " arrival has been signed by the freight company.");
+        }
+
         if (order.buyerSigned && order.freightSigned) {
             order.state = State.DELIVERED;
+            console.info("Order " + _orderId + " has been delivered.");
         }
 
         await ctx.stub.putState(_orderId, Buffer.from(JSON.stringify(order)));
-        console.info("============= END : signArrivalBuyer ===========");
-    }
-
-    public async signArrivalFreight(ctx: Context, _orderId: string) {
-        console.info("============= START : signArrivalFreight ===========");
-
-        const orderAsBytes = await ctx.stub.getState(_orderId);
-        if (!orderAsBytes || orderAsBytes.length === 0) {
-            throw new Error("An order with ID ${_orderId} does already exist");
-        }
-        const order: Order = JSON.parse(orderAsBytes.toString());
-
-        if (order.state != State.SHIPPED) {
-            throw new Error("The state of order ${_orderId} does not allow this action");
-        }
-
-        order.freightSigned = true;
-        if (order.buyerSigned && order.freightSigned) {
-            order.state = State.DELIVERED;
-        }
-
-        await ctx.stub.putState(_orderId, Buffer.from(JSON.stringify(order)));
-        console.info("============= END : signArrivalFreight ===========");
+        console.info("============= END : signArrival ===========");
     }
 }

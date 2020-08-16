@@ -18,9 +18,9 @@ export class Order {
     public productId: number;
     public quantity: number;
     public price: number;
+    public shippingCosts: number;
     public shippingAddress: string;
     public latestDeliveryDate: Date;
-    public shippingCosts: number;
     public trackingCode: string;
     public buyerSigned: boolean;
     public freightSigned: boolean;
