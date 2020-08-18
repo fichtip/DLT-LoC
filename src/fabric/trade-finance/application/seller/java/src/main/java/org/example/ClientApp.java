@@ -1,7 +1,3 @@
-/*
-SPDX-License-Identifier: Apache-2.0
-*/
-
 package org.example;
 
 import java.io.IOException;
@@ -59,18 +55,39 @@ public class ClientApp {
 				byte[] result;
 
 				result = contract.evaluateTransaction("queryAllOrders");
-				System.out.println("Result of 1st transaction:");
+				System.out.println("List of all orders:");
 				System.out.println(new String(result));
 				System.out.println("------------------------------------");
-
+				// if (false) {
 				contract.submitTransaction("createOrder", "1", "100", "2", "10", "2", "Karlsplatz 13, 1040 Wien",
+						"2020-09-20");
+				contract.submitTransaction("createOrder", "2", "123587", "5", "750", "4", "Ballhausplatz 2, 1010 Wien",
+						"2020-12-01");
+				contract.submitTransaction("createOrder", "3", "68754", "1", "1337", "2", "Michaelerkuppel, 1010 Wien",
 						"2020-08-15");
 
-				result = contract.evaluateTransaction("queryOrder", "1");
-				// Process response
-				System.out.println("Result of 2nd transaction:");
+				result = contract.evaluateTransaction("queryAllOrders");
+				System.out.println("List of all orders:");
 				System.out.println(new String(result));
 				System.out.println("------------------------------------");
+				// }
+				System.out.println("Wait until order with id 2 is set to state CONFIRMED");
+				result = contract.evaluateTransaction("queryOrder", "2");
+				Order order = Order.deserialize(result);
+				System.out.println(Order.deserialize(result));
+				while (order.getState() != Order.State.CONFIRMED) {
+					System.out.println("order 2 state is:" + order.getState());
+					Thread.sleep(5000);
+					result = contract.evaluateTransaction("queryOrder", "2");
+					order = Order.deserialize(result);
+				}
+
+				contract.submitTransaction("shipOrder", "2", "1AXCAW311");
+				System.out.println("shipped order 2");
+				result = contract.evaluateTransaction("queryOrder", "2");
+				System.out.println(Order.deserialize(result));
+				System.out.println("------------------------------------");
+
 			}
 		} catch (GatewayException | IOException | TimeoutException | InterruptedException e) {
 			e.printStackTrace();

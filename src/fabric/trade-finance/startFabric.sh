@@ -55,11 +55,11 @@ Java:
   Then, install dependencies and run the test using:
     mvn test
 
-  The seller test will invoke the sample client app and perform the following:
-    - Enroll User1.seller and import it into the wallet (if it does not already exist there)
-    - Query all orders
-		- Add a three new orders
-		- Output the added order
+	The seller test will invoke the sample client app and perform the following:
+	  - Enroll User1.seller and import it into the wallet (if it does not already exist there)
+	  - Query all orders
+		- Add three new orders
+		- Output the added orders
 		- Ship the order with id 2 if it got already confirmed
 
 	The buyer test will invoke the sample client app and perform the following:

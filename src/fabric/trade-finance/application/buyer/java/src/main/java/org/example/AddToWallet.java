@@ -1,7 +1,3 @@
-/*
-SPDX-License-Identifier: Apache-2.0
-*/
-
 package org.example;
 
 import java.io.IOException;
@@ -14,6 +10,11 @@ import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.stream.Stream;
+
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+
 import org.hyperledger.fabric.gateway.Identities;
 import org.hyperledger.fabric.gateway.Identity;
 import org.hyperledger.fabric.gateway.Wallet;
@@ -37,26 +38,39 @@ public class AddToWallet {
   public static void main(String[] args) {
     try {
       // A wallet stores a collection of identities
-      Path walletPath = Paths.get(".", "wallet");
-      Wallet wallet = Wallets.newFileSystemWallet(walletPath);
+      final Path walletPath = Paths.get(".", "wallet");
+      final Wallet wallet = Wallets.newFileSystemWallet(walletPath);
 
-      Path credentialPath = Paths.get("..", "..", "..", "test-network", "organizations", "peerOrganizations",
-          "seller.example.com", "users", "User1@seller.example.com", "msp");
+      final Path credentialPath = Paths.get("..", "..", "..", "..", "test-network", "organizations",
+          "peerOrganizations", "buyer.example.com", "users", "User1@buyer.example.com", "msp");
       System.out.println("credentialPath: " + credentialPath.toString());
-      Path certificatePath = credentialPath.resolve(Paths.get("signcerts", "User1@seller.example.com-cert.pem"));
+      // final Path certificatePath = credentialPath.resolve(Paths.get("signcerts",
+      // "User1@buyer.example.com-cert.pem"));
+      final Path certificatePath = credentialPath.resolve(Paths.get("signcerts", "cert.pem"));
       System.out.println("certificatePem: " + certificatePath.toString());
-      Path privateKeyPath = credentialPath.resolve(Paths.get("keystore", "priv_sk"));
 
-      X509Certificate certificate = readX509Certificate(certificatePath);
-      PrivateKey privateKey = getPrivateKey(privateKeyPath);
-      Identity identity = Identities.newX509Identity("SellerMSP", certificate, privateKey);
+      Path privateKeyPath = null;
+      try (Stream<Path> paths = Files.find(credentialPath.resolve(Paths.get("keystore")), Integer.MAX_VALUE,
+          (path, attrs) -> attrs.isRegularFile() && path.toString().endsWith("_sk"))) {
+        privateKeyPath = paths.findAny().get();
+      }
 
-      String identityLabel = "User1@seller.example.com";
+      // final Path privateKeyPath = credentialPath.resolve(Paths.get("keystore",
+      // "priv_sk"));
+
+      final X509Certificate certificate = readX509Certificate(certificatePath);
+
+      final String identityLabel = new LdapName(certificate.getSubjectX500Principal().getName()).getRdns().stream()
+          .filter(i -> i.getType().equalsIgnoreCase("CN")).findFirst().get().getValue().toString();
+
+      final PrivateKey privateKey = getPrivateKey(privateKeyPath);
+      final Identity identity = Identities.newX509Identity("BuyerMSP", certificate, privateKey);
+
       wallet.put(identityLabel, identity);
 
       System.out.println("Write wallet info into " + walletPath.toString() + " successfully.");
 
-    } catch (IOException | CertificateException | InvalidKeyException e) {
+    } catch (IOException | CertificateException | InvalidKeyException | InvalidNameException e) {
       System.err.println("Error adding to wallet");
       e.printStackTrace();
     }

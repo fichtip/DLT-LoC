@@ -29,12 +29,9 @@ export class TradeFinance extends Contract {
     }
 
     public async queryOrder(ctx: Context, _orderId: string): Promise<string> {
-        const orderAsBytes = await ctx.stub.getState(_orderId);
-        if (orderAsBytes.length === 0) {
-            throw new Error("" + _orderId + " does not exist");
-        }
-        console.log(orderAsBytes.toString());
-        return orderAsBytes.toString();
+        const order = await this.getOrder(ctx, _orderId);
+        //console.log(order.toString());
+        return JSON.stringify(order);
     }
 
     public async queryAllOrders(ctx: Context): Promise<string> {
@@ -52,7 +49,7 @@ export class TradeFinance extends Contract {
             }
             allResults.push({ Key: key, Record: record });
         }
-        console.info(allResults);
+        //console.info(allResults);
         return JSON.stringify(allResults);
     }
 
@@ -83,6 +80,7 @@ export class TradeFinance extends Contract {
 
         var splittedDate = _latestDeliveryDate.split("-"); // date given in yyyy-mm-dd format
         var parsedDate = new Date(parseInt(splittedDate[0]), parseInt(splittedDate[1]) - 1, parseInt(splittedDate[2]));
+        console.info("parsedDate:" + parsedDate.toLocaleString());
 
         const order: Order = {
             docType: "order",
@@ -120,8 +118,9 @@ export class TradeFinance extends Contract {
         console.info("============= END : cancelOrder ===========");
     }
 
-    public async deliveryDatePassed(ctx: Context, _orderId: string) {
+    public async deliveryDatePassed(ctx: Context, _orderId: string): Promise<boolean> {
         console.info("============= START : deliveryDatePassed ===========");
+        var passed = false;
 
         const order = await this.getOrder(ctx, _orderId);
 
@@ -130,15 +129,15 @@ export class TradeFinance extends Contract {
         }
 
         var currentDate = new Date();
-        if (currentDate > order.latestDeliveryDate) {
+        if (currentDate > new Date(order.latestDeliveryDate)) {
             order.state = State.PASSED;
-        } else {
-            throw new Error("Delivery date did not pass yet.");
+            await ctx.stub.putState(_orderId, Buffer.from(JSON.stringify(order)));
+            passed = true;
+            console.info("Order " + _orderId + " has been cancelled due passed delivery date.");
         }
 
-        await ctx.stub.putState(_orderId, Buffer.from(JSON.stringify(order)));
-        console.info("Order " + _orderId + " has been cancelled due passed delivery date.");
         console.info("============= END : deliveryDatePassed ===========");
+        return passed;
     }
 
     public async confirmOrder(ctx: Context, _orderId: string) {
@@ -168,7 +167,7 @@ export class TradeFinance extends Contract {
             throw new Error("The state of order " + _orderId + " does not allow this action");
         }
 
-        order.state = State.CONFIRMED;
+        order.state = State.SHIPPED;
         order.trackingCode = _trackingCode;
 
         await ctx.stub.putState(_orderId, Buffer.from(JSON.stringify(order)));
@@ -186,13 +185,12 @@ export class TradeFinance extends Contract {
             throw new Error("The state of order " + _orderId + " does not allow this action");
         }
 
-        const mspId: string = ctx.clientIdentity.getMSPID();
-        if (mspId == "buyer") {
+        if (ctx.clientIdentity.assertAttributeValue("hf.Affiliation", "buyer")) {
             order.buyerSigned = true;
             console.info("Order " + _orderId + " arrival has been signed by the buyer.");
         }
 
-        if (mspId == "freight") {
+        if (ctx.clientIdentity.assertAttributeValue("hf.Affiliation", "freight")) {
             order.freightSigned = true;
             console.info("Order " + _orderId + " arrival has been signed by the freight company.");
         }

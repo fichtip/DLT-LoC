@@ -1,7 +1,3 @@
-/*
-SPDX-License-Identifier: Apache-2.0
-*/
-
 package org.example;
 
 import java.io.IOException;
@@ -41,10 +37,10 @@ public class ClientApp {
 			final Wallet wallet = Wallets.newFileSystemWallet(walletPath);
 			System.out.println("Read wallet info from: " + walletPath);
 
-			final String userName = "User1@seller.example.com";
+			final String userName = "user1";
 
-			final Path connectionProfile = Paths.get("..", "..", "..", "test-network", "organizations",
-					"peerOrganizations", "seller.example.com", "connection-seller.yaml");
+			final Path connectionProfile = Paths.get("..", "..", "..", "..", "test-network", "organizations",
+					"peerOrganizations", "freight.example.com", "connection-freight.yaml");
 
 			// Set connection options on the gateway builder
 			builder.identity(wallet, userName).networkConfig(connectionProfile).discovery(false);
@@ -59,16 +55,24 @@ public class ClientApp {
 				byte[] result;
 
 				result = contract.evaluateTransaction("queryAllOrders");
-				System.out.println("Result of 1st transaction:");
+				System.out.println("List of all orders:");
 				System.out.println(new String(result));
 				System.out.println("------------------------------------");
 
-				contract.submitTransaction("createOrder", "1", "100", "2", "10", "2", "Karlsplatz 13, 1040 Wien",
-						"2020-08-15");
+				System.out.println("Wait until order with id 2 is set to state SHIPPED");
+				result = contract.evaluateTransaction("queryOrder", "2");
+				Order order = Order.deserialize(result);
+				System.out.println(Order.deserialize(result));
+				while (order.getState() != Order.State.SHIPPED) {
+					System.out.println("order 2 state is:" + order.getState());
+					Thread.sleep(5000);
+					result = contract.evaluateTransaction("queryOrder", "2");
+					order = Order.deserialize(result);
+				}
 
-				result = contract.evaluateTransaction("queryOrder", "1");
-				// Process response
-				System.out.println("Result of 2nd transaction:");
+				contract.submitTransaction("signArrival", "2");
+				System.out.println("Signed arrival of order 2");
+				result = contract.evaluateTransaction("queryOrder", "2");
 				System.out.println(new String(result));
 				System.out.println("------------------------------------");
 			}

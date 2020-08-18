@@ -1,7 +1,3 @@
-/*
-SPDX-License-Identifier: Apache-2.0
-*/
-
 package org.example;
 
 import java.io.IOException;
@@ -48,8 +44,6 @@ public class AddToWallet {
       final Path credentialPath = Paths.get("..", "..", "..", "..", "test-network", "organizations",
           "peerOrganizations", "seller.example.com", "users", "User1@seller.example.com", "msp");
       System.out.println("credentialPath: " + credentialPath.toString());
-      // final Path certificatePath = credentialPath.resolve(Paths.get("signcerts",
-      // "User1@seller.example.com-cert.pem"));
       final Path certificatePath = credentialPath.resolve(Paths.get("signcerts", "cert.pem"));
       System.out.println("certificatePem: " + certificatePath.toString());
 
@@ -58,9 +52,6 @@ public class AddToWallet {
           (path, attrs) -> attrs.isRegularFile() && path.toString().endsWith("_sk"))) {
         privateKeyPath = paths.findAny().get();
       }
-
-      // final Path privateKeyPath = credentialPath.resolve(Paths.get("keystore",
-      // "priv_sk"));
 
       final X509Certificate certificate = readX509Certificate(certificatePath);
 
