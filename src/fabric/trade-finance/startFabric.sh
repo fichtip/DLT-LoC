@@ -49,11 +49,11 @@ The trade-finance applications are available in the java directory of the specif
 
 Java:
 
-  Start by changing into the "java" directory:
-    cd application/{seller|buyer|freight}/java
+	Start by changing into the "java" directory:
+		cd application/{seller|buyer|freight}/java
 
-  Then, install dependencies and run the test using:
-    mvn test
+	Then, install dependencies and run the test using:
+		mvn test
 
 	The seller test will invoke the sample client app and perform the following:
 	  - Enroll User1.seller and import it into the wallet (if it does not already exist there)
@@ -67,7 +67,7 @@ Java:
 		- Query all orders
 		- Cancel the order with id 1
 		- Confirm the order with id 2
-		- Check if the delivery date of the order with 3 passed
+		- Check if the delivery date of the order with id 3 passed
 		- Sign the arrival of the order with id 2
 
 	The freight test will invoke the sample client app and perform the following:

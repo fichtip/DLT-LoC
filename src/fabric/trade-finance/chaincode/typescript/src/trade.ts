@@ -80,7 +80,7 @@ export class TradeFinance extends Contract {
 
         var splittedDate = _latestDeliveryDate.split("-"); // date given in yyyy-mm-dd format
         var parsedDate = new Date(parseInt(splittedDate[0]), parseInt(splittedDate[1]) - 1, parseInt(splittedDate[2]));
-        console.info("parsedDate:" + parsedDate.toLocaleString());
+        //console.info("parsedDate:" + parsedDate.toLocaleString());
 
         const order: Order = {
             docType: "order",
