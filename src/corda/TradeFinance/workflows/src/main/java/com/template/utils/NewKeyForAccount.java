@@ -1,4 +1,4 @@
-package com.template.accountUtils;
+package com.template.utils;
 
 import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.flows.FlowException;

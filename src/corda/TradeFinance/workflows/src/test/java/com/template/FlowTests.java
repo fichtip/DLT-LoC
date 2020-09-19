@@ -1,7 +1,7 @@
 package com.template;
 
 import com.google.common.collect.ImmutableList;
-import com.template.flows.AddOrderResponder;
+import com.template.flows.CreateOrderResponder;
 import net.corda.testing.node.MockNetwork;
 import net.corda.testing.node.MockNetworkParameters;
 import net.corda.testing.node.StartedMockNode;
@@ -24,7 +24,7 @@ public class FlowTests {
         b = network.createPartyNode(null);
         // For real nodes this happens automatically, but we have to manually register the flow for tests.
         for (StartedMockNode node : ImmutableList.of(a, b)) {
-            node.registerInitiatedFlow(AddOrderResponder.class);
+            node.registerInitiatedFlow(CreateOrderResponder.class);
         }
         network.runNetwork();
     }

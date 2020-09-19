@@ -1,4 +1,4 @@
-package com.template.accountUtils;
+package com.template.utils;
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo;
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService;

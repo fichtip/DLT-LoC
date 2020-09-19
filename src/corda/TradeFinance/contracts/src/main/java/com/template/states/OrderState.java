@@ -1,10 +1,7 @@
 package com.template.states;
 
 import com.template.contracts.TradeFinanceContract;
-import net.corda.core.contracts.Amount;
-import net.corda.core.contracts.BelongsToContract;
-import net.corda.core.contracts.CommandAndState;
-import net.corda.core.contracts.ContractState;
+import net.corda.core.contracts.*;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import net.corda.core.serialization.ConstructorForDeserialization;
@@ -23,7 +20,13 @@ import java.util.stream.Stream;
 // * State *
 // *********
 @BelongsToContract(TradeFinanceContract.class)
-public class OrderState implements ContractState {
+public class OrderState implements LinearState {
+
+    @NotNull
+    @Override
+    public UniqueIdentifier getLinearId() {
+        return this.orderId;
+    }
 
     @CordaSerializable
     public enum State {
@@ -39,7 +42,7 @@ public class OrderState implements ContractState {
     private Party seller;
     private State orderState;
     private Party buyer;
-    private int orderId;
+    private UniqueIdentifier orderId;
     private int productId;
     private double quantity;
     private Amount<Currency> price;
@@ -53,7 +56,7 @@ public class OrderState implements ContractState {
 
     /* Constructor of your Corda state */
     @ConstructorForDeserialization
-    public OrderState(Party seller, State orderState, Party buyer, int orderId, int productId, double quantity, Amount<Currency> price, Amount<Currency> shippingCosts, String shippingAddress, Instant latestDeliveryDate, Party freightCompany, String trackingCode, boolean buyerSigned, boolean freightSigned) {
+    public OrderState(Party seller, State orderState, Party buyer, UniqueIdentifier orderId, int productId, double quantity, Amount<Currency> price, Amount<Currency> shippingCosts, String shippingAddress, Instant latestDeliveryDate, Party freightCompany, String trackingCode, boolean buyerSigned, boolean freightSigned) {
         this.seller = seller;
         this.orderState = orderState;
         this.buyer = buyer;
@@ -70,15 +73,17 @@ public class OrderState implements ContractState {
         this.freightSigned = freightSigned;
     }
 
-    public OrderState(Party seller, State orderState, Party buyer, int orderId, int productId, double quantity, Amount<Currency> price, Amount<Currency> shippingCosts, String shippingAddress, Instant latestDeliveryDate) {
+    public OrderState(Party seller, Party buyer, String orderId, int productId, double quantity, Amount<Currency> price, Amount<Currency> shippingCosts, String shippingAddress, Instant latestDeliveryDate) {
+        this.seller = seller;
         this.buyer = buyer;
-        this.orderId = orderId;
+        this.orderId = new UniqueIdentifier(orderId);
         this.productId = productId;
         this.quantity = quantity;
         this.price = price;
         this.shippingCosts = shippingCosts;
         this.shippingAddress = shippingAddress;
         this.latestDeliveryDate = latestDeliveryDate;
+        this.orderState = State.CREATED;
     }
 
     //getters
@@ -98,7 +103,7 @@ public class OrderState implements ContractState {
         return buyer;
     }
 
-    public int getOrderId() {
+    public UniqueIdentifier getOrderId() {
         return orderId;
     }
 
@@ -158,18 +163,15 @@ public class OrderState implements ContractState {
         this.freightSigned = freightSigned;
     }
 
-    public OrderState copy() {
-        return new OrderState(this.seller, this.orderState, this.buyer, this.orderId, this.productId, this.quantity, this.price, this.shippingCosts, this.shippingAddress, this.latestDeliveryDate, this.freightCompany, this.trackingCode, this.buyerSigned, this.freightSigned);
-    }
-
     /* This method will indicate who are the participants and required signers when
      * this state is used in a transaction. */
+    @NotNull
     @Override
     public List<AbstractParty> getParticipants() {
-        if (this.orderState == State.CREATED || this.orderState == State.CONFIRMED) {
-            return Stream.of(seller, buyer).filter(Objects::nonNull).collect(Collectors.toList());
-        } else {
-            return Stream.of(seller, buyer, freightCompany).filter(Objects::nonNull).collect(Collectors.toList());
-        }
+        return Stream.of(this.seller, this.buyer, this.freightCompany).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    public OrderState copy() {
+        return new OrderState(this.seller, this.orderState, this.buyer, this.orderId, this.productId, this.quantity, this.price, this.shippingCosts, this.shippingAddress, this.latestDeliveryDate, this.freightCompany, this.trackingCode, this.buyerSigned, this.freightSigned);
     }
 }

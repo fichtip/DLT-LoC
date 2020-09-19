@@ -7,14 +7,14 @@ import net.corda.core.transactions.SignedTransaction;
 // ******************
 // * Responder flow *
 // ******************
-@InitiatedBy(AddOrder.class)
-public class AddOrderResponder extends FlowLogic<Void> {
+@InitiatedBy(CheckDeliveryDate.class)
+public class CheckDeliveryDateResponder extends FlowLogic<Void> {
 
     //private variable
     private FlowSession counterpartySession;
 
     //Constructor
-    public AddOrderResponder(FlowSession counterpartySession) {
+    public CheckDeliveryDateResponder(FlowSession counterpartySession) {
         this.counterpartySession = counterpartySession;
     }
 
