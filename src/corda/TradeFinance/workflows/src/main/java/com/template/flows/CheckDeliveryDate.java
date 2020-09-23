@@ -69,7 +69,7 @@ public class CheckDeliveryDate extends FlowLogic<String> {
         // Step 2. Compose the State that carries the order data
         progressTracker.setCurrentStep(GENERATING_TRANSACTION);
         OrderState outputOrderState = inputOrderState.copy();
-        outputOrderState.setOrderState(OrderState.State.CANCELLED);
+        outputOrderState.setOrderState(OrderState.State.PASSED);
 
         // Step 3. Create a new TransactionBuilder object.
         final TransactionBuilder builder = new TransactionBuilder(notary);

@@ -39,7 +39,7 @@ public class TradeFinanceContract implements Contract {
             //Using Corda DSL function requireThat to replicate conditions-checks
             requireThat(require -> {
                 require.using("No inputs should be consumed when adding a new order.", tx.getInputStates().size() == 0);
-                require.using("Only the seller is allowed to call this function.", command.getValue().getInitiator().getOwningKey().equals(output.getSeller().getOwningKey()));
+                require.using("Only the seller is allowed to start this flow.", command.getValue().getInitiator().getOwningKey().equals(output.getSeller().getOwningKey()));
                 require.using("The price must be greater or equal to the shipping costs.", output.getPrice().compareTo(output.getShippingCosts()) >= 0);
                 return null;
             });
@@ -48,7 +48,7 @@ public class TradeFinanceContract implements Contract {
             requireThat(require -> {
                 require.using("Exactly one input should be consumed when cancelling an order.", tx.getInputStates().size() == 1);
                 require.using("Function cannot be called at this state: " + input.getOrderState(), Stream.of(input.getOrderState()).anyMatch(Arrays.asList(OrderState.State.CREATED, OrderState.State.CONFIRMED)::contains));
-                require.using("Either the seller or the buyer must sign this transaction.", Arrays.asList(output.getSeller().getOwningKey(), output.getBuyer().getOwningKey()).contains(command.getValue().getInitiator().getOwningKey()));
+                require.using("Only the the seller or the buyer are allowed to start this flow.", Arrays.asList(output.getSeller().getOwningKey(), output.getBuyer().getOwningKey()).contains(command.getValue().getInitiator().getOwningKey()));
                 return null;
             });
         } else if (command.getValue() instanceof Commands.CheckDate) {
@@ -58,7 +58,6 @@ public class TradeFinanceContract implements Contract {
                 require.using("Function cannot be called at this state: " + input.getOrderState(), input.getOrderState() != OrderState.State.DELIVERED);
                 require.using("Delivery date did not pass yet.", Instant.now().isAfter(input.getLatestDeliveryDate()));
                 require.using("Refund not possible as the freight company already signed the arrival.", !input.isFreightSigned());
-                require.using("Either the seller, the buyer or the freight company must sign this transaction.", output.getParticipants().stream().map(AbstractParty::getOwningKey).collect(Collectors.toList()).contains(command.getValue().getInitiator().getOwningKey()));
                 return null;
             });
         } else if (command.getValue() instanceof Commands.Confirm) {
@@ -66,7 +65,7 @@ public class TradeFinanceContract implements Contract {
             requireThat(require -> {
                 require.using("Exactly one input should be consumed when confirming an order.", tx.getInputStates().size() == 1);
                 require.using("Function cannot be called at this state: " + input.getOrderState(), input.getOrderState() == OrderState.State.CREATED);
-                require.using("Only the buyer is allowed to call this function.", command.getValue().getInitiator().getOwningKey().equals(output.getBuyer().getOwningKey()));
+                require.using("Only the buyer is allowed to start this flow.", command.getValue().getInitiator().getOwningKey().equals(output.getBuyer().getOwningKey()));
                 return null;
             });
         } else if (command.getValue() instanceof Commands.Ship) {
@@ -74,7 +73,7 @@ public class TradeFinanceContract implements Contract {
             requireThat(require -> {
                 require.using("Exactly one input should be consumed when shipping an order.", tx.getInputStates().size() == 1);
                 require.using("Function cannot be called at this state: " + input.getOrderState(), input.getOrderState() == OrderState.State.CONFIRMED);
-                require.using("Only the seller is allowed to sign this transaction.", command.getValue().getInitiator().getOwningKey().equals(output.getSeller().getOwningKey()));
+                require.using("Only the seller is allowed to start this flow.", command.getValue().getInitiator().getOwningKey().equals(output.getSeller().getOwningKey()));
                 return null;
             });
         } else if (command.getValue() instanceof Commands.Sign) {
@@ -82,7 +81,7 @@ public class TradeFinanceContract implements Contract {
             requireThat(require -> {
                 require.using("Exactly one input should be consumed when signing an order.", tx.getInputStates().size() == 1);
                 require.using("Function cannot be called at this state: " + input.getOrderState(), input.getOrderState() == OrderState.State.SHIPPED);
-                require.using("Only the buyer and freight company are allowed to sign this transaction.", Arrays.asList(output.getBuyer().getOwningKey(), output.getFreightCompany().getOwningKey()).contains(command.getValue().getInitiator().getOwningKey()));
+                require.using("Only the buyer and freight company are allowed to start this flow.", Arrays.asList(output.getBuyer().getOwningKey(), output.getFreightCompany().getOwningKey()).contains(command.getValue().getInitiator().getOwningKey()));
                 return null;
             });
         }
