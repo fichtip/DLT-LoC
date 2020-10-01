@@ -54,7 +54,7 @@ public class FlowTests {
 
     @Test
     public void createOrderTest() throws ExecutionException, InterruptedException {
-        CreateOrder flow = new CreateOrder("Buyer", "1", 100, 2.0, "€10", "€2", "Karlsplatz 13, 1040 Wien", "2020-09-30");
+        CreateOrder flow = new CreateOrder("Buyer", "1", 100, 2.0, "10 EUR", "2 EUR", "Karlsplatz 13, 1040 Wien", "2020-09-30");
         CordaFuture<String> future = sellerNode.startFlow(flow);
         network.runNetwork();
         assert future.get().contains("Order with ID '1' of buyer '" + buyerNode.getInfo().getLegalIdentities().get(0).getName() + "' added.");
@@ -62,7 +62,7 @@ public class FlowTests {
 
     @Test
     public void cancelOrderTest() throws ExecutionException, InterruptedException {
-        FlowLogic<String> flow = new CreateOrder("Buyer", "1", 100, 2.0, "€10", "€2", "Karlsplatz 13, 1040 Wien", "2020-09-30");
+        FlowLogic<String> flow = new CreateOrder("Buyer", "1", 100, 2.0, "10 EUR", "2 EUR", "Karlsplatz 13, 1040 Wien", "2020-09-30");
         CordaFuture<String> future = sellerNode.startFlow(flow);
         network.runNetwork();
         assert future.get().contains("Order with ID '1' of buyer '" + buyerNode.getInfo().getLegalIdentities().get(0).getName() + "' added.");
@@ -75,7 +75,7 @@ public class FlowTests {
 
     @Test
     public void confirmOrderTest() throws ExecutionException, InterruptedException {
-        FlowLogic<String> flow = new CreateOrder("Buyer", "2", 123587, 5.0, "€750", "€4", "Ballhausplatz 2, 1010 Wien", "2020-12-01");
+        FlowLogic<String> flow = new CreateOrder("Buyer", "2", 123587, 5.0, "750 EUR", "4 EUR", "Ballhausplatz 2, 1010 Wien", "2020-12-01");
         CordaFuture<String> future = sellerNode.startFlow(flow);
         network.runNetwork();
         assert future.get().contains("Order with ID '2' of buyer '" + buyerNode.getInfo().getLegalIdentities().get(0).getName() + "' added.");
@@ -88,7 +88,7 @@ public class FlowTests {
 
     @Test
     public void shipOrderTest() throws ExecutionException, InterruptedException {
-        FlowLogic<String> flow = new CreateOrder("Buyer", "2", 123587, 5.0, "€750", "€4", "Ballhausplatz 2, 1010 Wien", "2020-12-01");
+        FlowLogic<String> flow = new CreateOrder("Buyer", "2", 123587, 5.0, "750 EUR", "4 EUR", "Ballhausplatz 2, 1010 Wien", "2020-12-01");
         CordaFuture<String> future = sellerNode.startFlow(flow);
         network.runNetwork();
         assert future.get().contains("Order with ID '2' of buyer '" + buyerNode.getInfo().getLegalIdentities().get(0).getName() + "' added.");
@@ -106,7 +106,7 @@ public class FlowTests {
 
     @Test
     public void signArrivalTest() throws ExecutionException, InterruptedException {
-        FlowLogic<String> flow = new CreateOrder("Buyer", "2", 123587, 5.0, "€750", "€4", "Ballhausplatz 2, 1010 Wien", "2020-12-01");
+        FlowLogic<String> flow = new CreateOrder("Buyer", "2", 123587, 5.0, "750 EUR", "4 EUR", "Ballhausplatz 2, 1010 Wien", "2020-12-01");
         CordaFuture<String> future = sellerNode.startFlow(flow);
         network.runNetwork();
         assert future.get().contains("Order with ID '2' of buyer '" + buyerNode.getInfo().getLegalIdentities().get(0).getName() + "' added.");
@@ -145,7 +145,7 @@ public class FlowTests {
 
     @Test
     public void checkDeliveryDateTest() throws ExecutionException, InterruptedException {
-        FlowLogic<String> flow = new CreateOrder("Buyer", "3", 68754, 1.0, "€1337", "€2", "Michaelerkuppel, 1010 Wien", "2020-08-15");
+        FlowLogic<String> flow = new CreateOrder("Buyer", "3", 68754, 1.0, "1337 EUR", "2 EUR", "Michaelerkuppel, 1010 Wien", "2020-08-15");
         CordaFuture<String> future = sellerNode.startFlow(flow);
         network.runNetwork();
         assert future.get().contains("Order with ID '3' of buyer '" + buyerNode.getInfo().getLegalIdentities().get(0).getName() + "' added.");
@@ -169,7 +169,7 @@ public class FlowTests {
 
     @Test(expected = Exception.class)
     public void confirmCancelledOrderTest() throws ExecutionException, InterruptedException {
-        FlowLogic<String> flow = new CreateOrder("Buyer", "1", 100, 2.0, "€10", "€2", "Karlsplatz 13, 1040 Wien", "2020-09-30");
+        FlowLogic<String> flow = new CreateOrder("Buyer", "1", 100, 2.0, "10 EUR", "2 EUR", "Karlsplatz 13, 1040 Wien", "2020-09-30");
         CordaFuture<String> future = sellerNode.startFlow(flow);
         network.runNetwork();
         assert future.get().contains("Order with ID '1' of buyer '" + buyerNode.getInfo().getLegalIdentities().get(0).getName() + "' added.");
@@ -187,7 +187,7 @@ public class FlowTests {
 
     @Test(expected = Exception.class)
     public void createOrderHighShippingTest() throws ExecutionException, InterruptedException {
-        CreateOrder flow = new CreateOrder("Buyer", "1", 100, 2.0, "€10", "€20", "Karlsplatz 13, 1040 Wien", "2020-09-30");
+        CreateOrder flow = new CreateOrder("Buyer", "1", 100, 2.0, "10 EUR", "2 EUR0", "Karlsplatz 13, 1040 Wien", "2020-09-30");
         CordaFuture<String> future = sellerNode.startFlow(flow);
         network.runNetwork();
         future.get();

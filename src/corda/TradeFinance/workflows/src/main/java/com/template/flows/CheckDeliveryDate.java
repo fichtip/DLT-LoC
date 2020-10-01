@@ -58,33 +58,33 @@ public class CheckDeliveryDate extends FlowLogic<String> {
     @Suspendable
     @Override
     public String call() throws FlowException {
-        // Step 0. Check if an order with this ID already exists
+        // Step 1. Check if an order with this ID already exists
         StateAndRef<OrderState> inputOrderStateAndRef = DataUtils.getOrder(getServiceHub(), this.orderId);
         OrderState inputOrderState = inputOrderStateAndRef.getState().getData();
 
         // Generate State for transfer
-        // Step 1. Get a reference to the notary service on our network and our key pair.
+        // Step 2. Get a reference to the notary service on our network and our key pair.
         final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
 
-        // Step 2. Compose the State that carries the order data
+        // Step 3. Compose the State that carries the order data
         progressTracker.setCurrentStep(GENERATING_TRANSACTION);
         OrderState outputOrderState = inputOrderState.copy();
         outputOrderState.setOrderState(OrderState.State.PASSED);
 
-        // Step 3. Create a new TransactionBuilder object.
+        // Step 4. Create a new TransactionBuilder object.
         final TransactionBuilder builder = new TransactionBuilder(notary);
 
-        // Step 4. Add the iou as an output state, as well as a command to the transaction builder.
+        // Step 5. Add the order as an output state, as well as a command to the transaction builder.
         builder.addInputState(inputOrderStateAndRef);
         builder.addOutputState(outputOrderState);
         builder.addCommand(new TradeFinanceContract.Commands.CheckDate(getOurIdentity()), outputOrderState.getParticipants().stream().map(AbstractParty::getOwningKey).collect(Collectors.toList()));
 
-        // Step 5. Verify and sign it with our KeyPair.
+        // Step 6. Verify and sign it with our KeyPair.
         progressTracker.setCurrentStep(SIGNING_TRANSACTION);
         builder.verify(getServiceHub());
         final SignedTransaction ptx = getServiceHub().signInitialTransaction(builder);
 
-        // Step 6. Collect the other party's signature using the SignTransactionFlow.
+        // Step 7. Collect the other party's signature using the SignTransactionFlow.
         progressTracker.setCurrentStep(COLLECTING_SIGNATURES);
         List<Party> otherParties = outputOrderState.getParticipants().stream().map(el -> (Party) el).collect(Collectors.toList());
         otherParties.remove(getOurIdentity());
@@ -92,7 +92,7 @@ public class CheckDeliveryDate extends FlowLogic<String> {
 
         SignedTransaction stx = subFlow(new CollectSignaturesFlow(ptx, sessions));
 
-        // Step 7. Assuming no exceptions, we can now finalise the transaction
+        // Step 8. Assuming no exceptions, we can now finalise the transaction
         progressTracker.setCurrentStep(FINALISING_TRANSACTION);
         subFlow(new FinalityFlow(stx, sessions));
 

@@ -27,9 +27,9 @@ public class SignArrivalResponder extends FlowLogic<Void> {
             protected void checkTransaction(SignedTransaction stx) throws FlowException {
                 /*
                  * SignTransactionFlow will automatically verify the transaction and its signatures before signing it.
-                 * However, just because a transaction is contractually valid doesn’t mean we necessarily want to sign.
-                 * What if we don’t want to deal with the counterparty in question, or the value is too high,
-                 * or we’re not happy with the transaction’s structure? checkTransaction
+                 * However, just because a transaction is contractually valid doesn't mean we necessarily want to sign.
+                 * What if we don't want to deal with the counterparty in question, or the value is too high,
+                 * or we're not happy with the transaction's structure? checkTransaction
                  * allows us to define these additional checks. If any of these conditions are not met,
                  * we will not sign the transaction - even if the transaction and its signatures are contractually valid.
                  * ----------
