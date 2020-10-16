@@ -1,4 +1,5 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.6.0;
 
 contract TradeFinanceContract {
     enum States {
@@ -131,6 +132,7 @@ contract TradeFinanceContract {
         orders[_orderId].shippingAddress = _shippingAddress;
         orders[_orderId].latestDeliveryDate = _latestDeliveryDate;
         orderCount++;
+        emit Log(_orderId, "Order has been added");
     }
 
     function cancelOrder(uint256 _orderId) public onlySellerOrBuyer(_orderId) {
@@ -152,7 +154,7 @@ contract TradeFinanceContract {
 
     function deliveryDatePassed(uint256 _orderId) public {
         require(
-            now >= orders[_orderId].latestDeliveryDate,
+            block.timestamp >= orders[_orderId].latestDeliveryDate,
             "Delivery date did not pass yet."
         );
         require(
@@ -163,10 +165,12 @@ contract TradeFinanceContract {
             orders[_orderId].freightSigned == false,
             "Refund not possible as the freight company already signed the arrival."
         );
-		
+
         orders[_orderId].state = States.PASSED;
-        balances[orders[_orderId].buyer] -= orders[_orderId].price;
-        orders[_orderId].buyer.transfer(orders[_orderId].price);
+        if (orders[_orderId].state >= States.CONFIRMED) {
+            balances[orders[_orderId].buyer] -= orders[_orderId].price;
+            orders[_orderId].buyer.transfer(orders[_orderId].price);
+        }
         emit Log(
             _orderId,
             "Order has been cancelled due passed delivery date."
