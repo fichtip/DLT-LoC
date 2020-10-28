@@ -79,6 +79,8 @@ module.exports = {
 
   // Set default mocha options here, use special reporters etc.
   mocha: {
+    reporter: 'eth-gas-reporter',
+    reporterOptions: { currency: 'EUR', gasPrice: 20, coinmarketcap: '38b29489-a743-4116-bc58-5eb4de3c259e' }
     // timeout: 100000
   },
 
@@ -87,13 +89,13 @@ module.exports = {
     solc: {
       version: "^0.6.0",    // Fetch exact version from solc-bin (default: truffle's version)
       // docker: false,        // Use "0.5.1" you've installed locally with docker (default: false)
-      // settings: {          // See the solidity docs for advice about optimization and evmVersion
+      //settings: {          // See the solidity docs for advice about optimization and evmVersion
       //  optimizer: {
-      //    enabled: false,
+      //    enabled: true,
       //    runs: 200
       //  },
       //  evmVersion: "byzantium"
-      // }
+      //}
     }
   }
 }
